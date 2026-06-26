@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAXX CRAFTS - Face Identity Score System</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --brand-gold: #8a7355;
+            --brand-dark-gold: #725e44;
+            --bg-sand: #f8f6f2;
+            --luxury-black: #111111;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Baskerville, Arial, sans-serif;
+            background-color: var(--bg-sand);
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .poster-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #e5dfd5;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+            border-radius: 4px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 1px solid #eae5dc;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 32px;
+            font-weight: 300;
+            letter-spacing: 6px;
+            color: var(--luxury-black);
+            margin: 0 0 5px 0;
+        }
+        .header p {
+            font-size: 13px;
+            letter-spacing: 2px;
+            color: var(--brand-gold);
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .upload-btn {
+            background-color: var(--luxury-black);
+            color: #fff;
+            padding: 12px 35px;
+            font-size: 13px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 0;
+            font-weight: bold;
+            transition: 0.3s;
+            display: inline-block;
+        }
+        .upload-btn:hover { background-color: var(--brand-gold); }
+        #imageInput { display: none; }
+
+        #loading {
+            display: none;
+            color: var(--brand-gold);
+            font-style: italic;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        .main-dashboard {
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            gap: 30px;
+            margin-top: 20px;
+            opacity: 0.2;
+            transition: opacity 0.5s;
+        }
+        .main-dashboard.active { opacity: 1; }
+
+        .report-panel {
+            text-align: left;
+        }
+        .panel-title {
+            font-size: 14px;
+            letter-spacing: 1.5px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--luxury-black);
+            padding-bottom: 6px;
+            margin-bottom: 20px;
+            color: var(--luxury-black);
+        }
+
+        .report-item {
+            margin-bottom: 20px;
+        }
+        .report-item label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #888;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 3px;
+        }
+        .report-item .value {
+            font-size: 15px;
+            font-weight: bold;
+            color: #222;
+        }
+        .report-item .sub-desc {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .center-canvas-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            background: #fafafa;
+            border: 1px solid #eee;
+        }
+        canvas {
+            width: 100%;
+            max-width: 480px;
+            height: auto;
+            display: block;
+        }
+
+        .score-row {
+            margin-bottom: 18px;
+        }
+        .score-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 4px;
+            background-color: #eee;
+            position: relative;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: var(--luxury-black);
+            width: 0%;
+            transition: width 1s ease-in-out;
+        }
+
+        .primary-identity-box {
+            background: linear-gradient(135deg, #1c1915 0%, #0d0c0a 100%);
+            color: #fff;
+            padding: 25px 20px;
+            text-align: center;
+            margin-top: 30px;
+            border: 1px solid #d4af37;
+            position: relative;
+        }
+        .badge-icon {
+            font-size: 28px;
+            color: #d4af37;
+            margin-bottom: 5px;
+            font-family: Georgia, serif;
+        }
+        .badge-title-label {
+            font-size: 10px;
+            color: #bfa37a;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .badge-main-title {
+            font-size: 18px;
+            letter-spacing: 1px;
+            font-weight: bold;
+            color: #fff;
+            margin: 5px 0 12px 0;
+        }
+        .badge-desc {
+            font-size: 11px;
+            color: #ccc;
+            line-height: 1.4;
+            border-top: 1px solid #332d24;
+            padding-top: 10px;
+        }
+
+        .bottom-selector {
+            margin-top: 40px;
+            border-top: 1px solid #eae5dc;
+            padding-top: 25px;
+            display: none;
+        }
+        .bottom-selector h3 {
+            font-size: 13px;
+            letter-spacing: 2px;
+            color: var(--brand-gold);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        .style-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        .style-card {
+            background: #faf9f6;
+            border: 1px solid #e8e3da;
+            padding: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .style-card:hover, .style-card.active {
+            border-color: var(--luxury-black);
+            background: #fff;
+        }
+        .style-card .code {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--brand-gold);
+        }
+        .style-card .name {
+            font-size: 13px;
+            font-weight: bold;
+            margin: 2px 0;
+        }
+        .style-card .desc {
+            font-size: 11px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+<div class="poster-container">
+    <div class="header">
+        <h1>MAXX CRAFTS</h1>
+        <p>Face Identity Explorer & Score Matrix</p>
+    </div>
+
+    <div class="upload-section">
+        <label class="upload-btn" for="imageInput">上传照片开始精准美学分析</label>
+        <input type="file" id="imageInput" accept="image/*">
+        <div id="loading">AI 核心正在精准架构 6 大面部几何维度，请稍候...</div>
+    </div>
+
+    <div class="main-dashboard" id="mainDashboard">
+        
+        <div class="report-panel">
+            <div class="panel-title">Face Identity Report</div>
+            
+            <div class="report-item">
+                <label>Face Shape / 判定脸型</label>
+                <div class="value" id="resFaceShape">-</div>
+                <div class="sub-desc">经多维几何矩阵精准解构判定</div>
+            </div>
+            
+            <div class="report-item">
+                <label>Face Proportion / 脸部比例</label>
+                <div class="value" id="resProportion">Balanced & Harmonious</div>
+                <div class="sub-desc">亚洲专属面部黄金比例框架</div>
+            </div>
+            
+            <div class="report-item">
+                <label>Face Balance / 对称度</label>
+                <div class="value">Symmetrical / 垂直高度对称</div>
+            </div>
+
+            <div class="report-item">
+                <label>Recommended Objective / 镜框美学目标</label>
+                <div class="value" id="resObjective" style="font-size:13px; color:#65543f;">-</div>
+            </div>
+        </div>
+
+        <div class="center-canvas-area">
+            <canvas id="outputCanvas"></canvas>
+        </div>
+
+        <div class="report-panel">
+            <div class="panel-title">Face Identity Score</div>
+            
+            <div class="score-row">
+                <div class="score-info"><span>PROFESSIONAL FIT (专业型)</span><span id="s_prof">0.0</span></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" id="b_prof"></div></div>
+            </div>
+            <div class="score-row">
+                <div class="score-info"><span>EXECUTIVE FIT (领袖型)</span><span id="s_exec">0.0</span></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" id="b_exec"></div></div>
+            </div>
+            <div class="score-row">
+                <div class="score-info"><span>CREATIVE FIT (创意型)</span><span id="s_crea">0.0</span></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" id="b_crea"></div></div>
+            </div>
+            <div class="score-row">
+                <div class="score-info"><span>SIGNATURE FIT (风格型)</span><span id="s_sign">0.0</span></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" id="b_sign"></div></div>
+            </div>
+            <div class="score-row">
+                <div class="score-info"><span>CLASSIC FIT (经典型)</span><span id="s_clas">0.0</span></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" id="b_clas"></div></div>
+            </div>
+
+            <div class="primary-identity-box">
+                <div class="badge-icon">⚜</div>
+                <div class="badge-title-label">Primary Face Identity</div>
+                <div class="badge-main-title" id="badgeTitle">IDENTIFYING...</div>
+                <div class="badge-desc" id="badgeDesc">通过多面几何分析，为您唤醒潜藏的面貌与独特气场标签。</div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="bottom-selector" id="bottomSelector">
+        <h3>Which Shape Are You? 点击款式即刻虚拟试戴</h3>
+        <div class="style-grid">
+            <div class="style-card active" onclick="changeStyle('S001', this)">
+                <div class="code">S001</div>
+                <div class="name">SQUARE</div>
+                <div class="desc">Professional / 锐利严谨</div>
+            </div>
+            <div class="style-card" onclick="changeStyle('S003', this)">
+                <div class="code">S003</div>
+                <div class="name">RECTANGLE</div>
+                <div class="desc">Executive / 领袖气场</div>
+            </div>
+            <div class="style-card" onclick="changeStyle('S005', this)">
+                <div class="code">S005</div>
+                <div class="name">PANTO</div>
+                <div class="desc">Creative / 前卫灵感</div>
+            </div>
+            <div class="style-card" onclick="changeStyle('S002', this)">
+                <div class="code">S002</div>
+                <div class="name">OVERSIZED</div>
+                <div class="desc">Statement / 本我标签</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const imageInput = document.getElementById('imageInput');
+    const canvas = document.getElementById('outputCanvas');
+    const ctx = canvas.getContext('2d');
+    const loading = document.getElementById('loading');
+    const mainDashboard = document.getElementById('mainDashboard');
+    const bottomSelector = document.getElementById('bottomSelector');
+
+    let originalImage = null;
+    let currentFaceLandmarks = null;
+    let currentStyle = 'S001';
+
+    // 1. 初始化 MediaPipe Face Mesh
+    const faceMesh = new FaceMesh({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    });
+    faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+
+    const dbFaceLogic = {
+        'Oval': { name: 'Oval / 椭圆脸', obj: '保持面部自然和谐与完美平衡 (Maintain harmony)', scores: [8.6, 8.9, 8.4, 9.2, 8.7], primary: 'SIGNATURE FIT', desc: 'Distinctive • Expressive • Memorable<br>释放本我标签，于不经意间在众人之中脱颖而出。' },
+        'Round': { name: 'Round / 圆脸', obj: '通过几何折角增加脸部立体感与结构化线条 (Add angles)', scores: [9.0, 8.5, 9.5, 7.8, 8.0], primary: 'CREATIVE FIT', desc: 'Individual • Bold • Avant-garde<br>打破圆润边界，注入鲜明而强烈的灵感与设计力张力。' },
+        'Square': { name: 'Square / 方脸', obj: '利用柔和的曲率弱化面部硬朗的下巴折角 (Soften angularity)', scores: [8.0, 9.2, 7.5, 8.5, 9.0], primary: 'EXECUTIVE FIT', desc: 'Powerful • Dominant • Influential<br>彰显掌控感与决策魄力，打造极具份量感的领袖气场。' },
+        'Oblong': { name: 'Oblong / 长形脸', obj: '通过横向拉宽视觉比例缩短纵向延伸感 (Reduce visual length)', scores: [9.2, 8.8, 8.0, 9.0, 8.5], primary: 'PROFESSIONAL FIT', desc: 'Trustworthy • Clear • Balanced<br>传递极度严谨、理性、稳重的精英学者与专业信赖感。' }
+    };
+
+    function updateAnalysisUI(detectedShape) {
+        const data = dbFaceLogic[detectedShape] || dbFaceLogic['Oval'];
+        document.getElementById('resFaceShape').innerText = data.name;
+        document.getElementById('resObjective').innerText = data.obj;
+
+        const keys = ['prof', 'exec', 'crea', 'sign', 'clas'];
+        keys.forEach((key, index) => {
+            const val = data.scores[index];
+            document.getElementById(`s_${key}`).innerText = val.toFixed(1) + ' / 10';
+            document.getElementById(`b_${key}`).style.width = (val * 10) + '%';
+        });
+
+        document.getElementById('badgeTitle').innerText = data.primary;
+        document.getElementById('badgeDesc').innerHTML = data.desc;
+    }
+
+    // 前端 Canvas 绘制黑框眼镜函数
+    function drawGlassesDynamic(ctx, width, height, styleCode) {
+        ctx.lineWidth = width * 0.065;
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+
+        const hw = width / 2;
+        const hh = height / 2;
+
+        if (styleCode === 'S001' || styleCode === 'S002') { 
+            let boxSize = hw * 0.85;
+            if(styleCode === 'S002') boxSize = hw * 0.98;
+            ctx.beginPath(); ctx.roundRect(-hw * 0.9, -boxSize*0.5, boxSize, boxSize, width * 0.08); ctx.stroke(); ctx.fill();
+            ctx.beginPath(); ctx.roundRect(hw * 0.9 - boxSize, -boxSize*0.5, boxSize, boxSize, width * 0.08); ctx.stroke(); ctx.fill();
+        } 
+        else if (styleCode === 'S003') { 
+            const rw = hw * 0.88; const rh = height * 0.72;
+            ctx.beginPath(); ctx.roundRect(-hw * 0.95, -rh*0.5, rw, rh, width * 0.04); ctx.stroke(); ctx.fill();
+            ctx.beginPath(); ctx.roundRect(hw * 0.95 - rw, -rh*0.5, rw, rh, width * 0.04); ctx.stroke(); ctx.fill();
+        } 
+        else if (styleCode === 'S005') { 
+            const radius = hw * 0.42;
+            ctx.beginPath(); ctx.arc(-hw * 0.46, 0, radius, 0, 2 * Math.PI); ctx.stroke(); ctx.fill();
+            ctx.beginPath(); ctx.arc(hw * 0.46, 0, radius, 0, 2 * Math.PI); ctx.stroke(); ctx.fill();
+        }
+
+        ctx.beginPath();
+        ctx.lineWidth = width * 0.045;
+        ctx.moveTo(-hw * 0.15, -height * 0.08);
+        ctx.quadraticCurveTo(0, -height * 0.22, hw * 0.15, -height * 0.08);
+        ctx.stroke();
+    }
+
+    // 重新渲染原图与眼镜的核心逻辑（修复版）
+    function renderEffect() {
+        if (!originalImage || !currentFaceLandmarks) return;
+
+        // 100% 干净清空
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 绘制完整缩放后的原图
+        ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+
+        const landmarks = currentFaceLandmarks;
+        const pLeft = { x: landmarks[33].x * canvas.width, y: landmarks[33].y * canvas.height };
+        const pRight = { x: landmarks[263].x * canvas.width, y: landmarks[263].y * canvas.height };
+        const pBridge = { x: landmarks[6].x * canvas.width, y: landmarks[6].y * canvas.height };
+
+        const dX = pRight.x - pLeft.x;
+        const dY = pRight.y - pLeft.y;
+        const eyeDistance = Math.sqrt(dX * dX + dY * dY);
+
+        const glassesWidth = eyeDistance * 2.25;
+        const glassesHeight = glassesWidth * 0.46;
+        const angle = Math.atan2(dY, dX);
+
+        ctx.save();
+        ctx.translate(pBridge.x, pBridge.y - (glassesHeight * 0.08));
+        ctx.rotate(angle);
+        drawGlassesDynamic(ctx, glassesWidth, glassesHeight, currentStyle);
+        ctx.restore();
+    }
+
+    function changeStyle(styleCode, btnElement) {
+        currentStyle = styleCode;
+        document.querySelectorAll('.style-card').forEach(card => card.classList.remove('active'));
+        btnElement.classList.add('active');
+        renderEffect();
+    }
+
+    faceMesh.onResults((results) => {
+        loading.style.display = 'none';
+        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+            currentFaceLandmarks = results.multiFaceLandmarks[0];
+            
+            // 脸型核心判定
+            const pTop = currentFaceLandmarks[10];
+            const pBot = currentFaceLandmarks[152];
+            const pL = currentFaceLandmarks[234];
+            const pR = currentFaceLandmarks[454];
+
+            const fLength = Math.abs(pBot.y - pTop.y);
+            const fWidth = Math.abs(pR.x - pL.x);
+            const ratio = fLength / fWidth;
+
+            let detectedShape = 'Oval';
+            if (ratio > 1.45) { detectedShape = 'Oblong'; }
+            else if (ratio < 1.15) { detectedShape = 'Round'; }
+            else {
+                const jawAngleDist = Math.abs(currentFaceLandmarks[132].x - currentFaceLandmarks[361].x);
+                if (jawAngleDist > 0.4) { detectedShape = 'Square'; }
+            }
+
+            mainDashboard.classList.add('active');
+            bottomSelector.style.display = 'block';
+
+            updateAnalysisUI(detectedShape);
+            renderEffect();
+        } else {
+            alert("未能捕获面部轮廓，请使用清晰的正面半身照重新上传。");
+        }
+    });
+
+    imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        loading.style.display = 'block';
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            originalImage = new Image();
+            originalImage.onload = () => {
+                // 彻底修复：让画布的宽高完全按照图片真实比例来缩放建立
+                const maxW = 600;
+                if (originalImage.width > maxW) {
+                    canvas.width = maxW;
+                    canvas.height = originalImage.height * (maxW / originalImage.width);
+                } else {
+                    canvas.width = originalImage.width;
+                    canvas.height = originalImage.height;
+                }
+                
+                // 启动 MediaPipe 进行追踪
+                faceMesh.send({ image: originalImage });
+            };
+            originalImage.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+</script>
+
+</body>
+</html>
