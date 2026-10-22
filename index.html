@@ -51,6 +51,8 @@ pre{white-space:pre-wrap;background:var(--bg);padding:10px;border-radius:8px;fon
 .pf .btn{padding:7px 12px;font-size:13px}#pg .card div{font-size:12px;line-height:1.35}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tracking@1.1.3/build/tracking-min.js"></script><script src="https://cdn.jsdelivr.net/npm/tracking@1.1.3/build/data/face-min.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T7B4263X9Q"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-T7B4263X9Q");</script>
 <script src="data.js"></script>
 </head>
 <body><main>
@@ -63,7 +65,7 @@ pre{white-space:pre-wrap;background:var(--bg);padding:10px;border-radius:8px;fon
   <button class="big" id="b2"><b>🕶️ I like a product photo</b>Seen our product photos? Pick that style, then adjust the colours and size.</button>
   <button class="big" id="b3"><b>📅 Book a visit</b>Book an appointment to try our frames in person at one of our locations.</button>
   
-  <p class="mut">Your photo stays on your device and is never uploaded.</p>
+  <p class="mut">Your photo stays on your device and is never uploaded. We only count visits anonymously to improve this page.</p>
 </div>
 
 <div id="book" class="scr">
@@ -200,7 +202,7 @@ function prodGrid(){const g=$("pg");g.innerHTML="";
  Q.slice(0,PF.lim).forEach(p=>{const b=document.createElement("button");b.className="card";
   const fc=p.sp?"Curated spliced · "+p.sp:p.f.map(k=>D.F[fi(k)].c).join(" + "),tc=p.sp?"Curated spliced":D.T[ti(p.t)].c;
   b.innerHTML='<img loading="lazy" src="'+J(p.i)+'" alt=""><div><b>'+p.s+" · RM "+p.p+"</b><br>Frame "+fc+"<br>Temple "+tc+"</div>";
-  b.onclick=()=>{const t=tierOf(p);openCfg({shape:D.S.findIndex(s=>s.id==p.s),f:fi(p.f[0]),t:ti(p.t),tier:t,mix:t==1?p.f.map(fi):[],ref:p.i},"prod")};
+  b.onclick=()=>{ga("select_product",{shape:p.s,price:p.p});const t=tierOf(p);openCfg({shape:D.S.findIndex(s=>s.id==p.s),f:fi(p.f[0]),t:ti(p.t),tier:t,mix:t==1?p.f.map(fi):[],ref:p.i},"prod")};
   g.appendChild(b)});
  $("pmore").style.display=Q.length>PF.lim?"inline-block":"none"}
 function autoEyes(c){try{if(!window.tracking||!tracking.ViolaJones||!tracking.ViolaJones.classifiers||!tracking.ViolaJones.classifiers.face)return null;const k=Math.min(1,480/c.width),w=Math.round(c.width*k),h=Math.round(c.height*k),t=document.createElement("canvas");t.width=w;t.height=h;const x=t.getContext("2d");x.drawImage(c,0,0,w,h);const tr=new tracking.ObjectTracker("face");tr.setInitialScale(3);tr.setStepSize(1.5);tr.setEdgesDensity(0.1);let R=[];tr.on("track",e=>{R=e.data||[]});tr.track(x.getImageData(0,0,w,h).data,w,h);if(!R.length)return null;const f=[...R].sort((a,b)=>b.width*b.height-a.width*a.height)[0],cx=(f.x+f.width/2)/k,cy=(f.y+f.height*.38)/k,d=f.width*.43/k;return[{x:cx-d/2,y:cy},{x:cx+d/2,y:cy}]}catch(e){return null}}
@@ -233,7 +235,7 @@ async function go(){
  x.fillStyle="#777";x.font="18px sans-serif";x.fillText("Colours are an on-screen guide; handcrafted acetate may vary",24,ph+384);
  $("ci").src=c.toDataURL("image/jpeg",.92);c.toBlob(b=>{CB=b;const f=new File([b],"Maxx-Crafts-"+D.S[S.shape].id+".jpg",{type:"image/jpeg"});$("shr").style.display=(navigator.canShare&&navigator.canShare({files:[f]}))?"inline-block":"none"},"image/jpeg",.92);$("sum").textContent=lines();
  {$("em2").href="mailto:"+$("em").value.trim()+"?subject="+encodeURIComponent("My Maxx Crafts design "+D.S[S.shape].id)+"&body="+encodeURIComponent("My design:\n"+lines()+"\n\n(Please attach the saved design card image.)")}$("wa2").href="https://wa.me/"+WA2+"?text="+encodeURIComponent("Hi Maxx Crafts, I would like to order this pair of glasses:\n"+lines());$("wa").href="https://wa.me/"+WA+"?text="+encodeURIComponent("Hi Maxx Crafts, I would like to order this pair of glasses:\n"+lines());
- $("card2").style.display="block";$("card2").scrollIntoView({behavior:"smooth"});
+ $("card2").style.display="block";ga("design_card",{shape:D.S[S.shape].id,price:[799,1199,1899][S.tier]});$("card2").scrollIntoView({behavior:"smooth"});
 }
 function clearAll(){S=S0();["q","eng","nm","ct","co","em","ad"].forEach(i=>$(i).value="");$("reg").value="";$("co").style.display="none";$("pd").value=63;$("pd1").value=63;$("vy").value=0;$("lq").checked=false;$("ok").checked=false;$("card2").style.display="none";$("sc").style.display="none";$("up").style.display="block";$("recw").style.display="none";$("rg").innerHTML="";$("stip").textContent="";["f1","f1c","f2"].forEach(i=>$(i).value="");show("home")}
 function kick(){clearTimeout(idle);idle=setTimeout(()=>{if(S.photo||S.shape!==null)clearAll()},600000)}
@@ -277,6 +279,10 @@ document.addEventListener("mousemove",e=>{if(zm.style.display=="block")zpos(e)})
 document.addEventListener("mouseout",e=>{if(e.target.closest&&e.target.closest(ZS))zm.style.display="none"});
 document.addEventListener("click",e=>{const i=e.target.closest&&e.target.closest(ZS);if(i){zm.style.display="none";lb.firstChild.src=i.src;lb.style.display="flex"}});
 $("fsq").oninput=()=>{$("fs").scrollTop=0;chips("fs",D.F,"f","fn")};$("tsq").oninput=()=>{$("ts").scrollTop=0;chips("ts",D.T,"t","tn")};prodInit();prodGrid();const CN=["Mixed picks","Round","Oval","Square","Cat-eye / Special"];CN.forEach((n,i)=>{const b=document.createElement("button");b.className="btn o"+(i==0?" on":"");b.textContent=n+(i?" ("+CAT.filter(c=>c==i-1).length+")":"");b.onclick=()=>{CATSEL=i-1;RPOS=0;[...$("cats").children].forEach((c,j)=>c.classList.toggle("on",j==i));recommend()};$("cats").appendChild(b)});
+const ga=(n,p)=>{try{if(window.gtag)gtag("event",n,p||{})}catch(e){}};
+$("b1").addEventListener("click",()=>ga("entry_selfie"));$("b2").addEventListener("click",()=>ga("entry_product_photos"));$("b3").addEventListener("click",()=>ga("entry_book_visit"));$("bkv").addEventListener("click",()=>ga("book_visit_from_design"));
+$("wa").addEventListener("click",()=>ga("order_whatsapp",{number:"012-3756110"}));$("wa2").addEventListener("click",()=>ga("order_whatsapp",{number:"017-4849926"}));$("shr").addEventListener("click",()=>ga("order_whatsapp",{number:"share"}));
+["bw","bw2"].forEach(i=>$(i).addEventListener("click",()=>{if($("bl").value&&$("bn").value.trim()&&$("bp").value.trim()&&$("bd").value)ga("booking_whatsapp",{location:loc()})}));
 </script>
 </body>
 </html>
